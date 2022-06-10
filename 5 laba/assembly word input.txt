@@ -1,0 +1,43 @@
+ORG     0X498
+START:    CLA
+      PUSH
+      CALL   MAININPUT
+      POP;   В AC ТЕКУЩИЙ СИМВОЛ
+      ST     (TEMPWORD1)
+      CMP    STOPSYMB
+      BEQ    HALT1
+      ST     (TEMPWORD1)
+
+      CLA
+      PUSH
+      CALL   DEFINPUT
+      POP
+      ST     (TEMPWORD2)
+      CMP    STOPSYMB
+      BEQ    HALT2
+      SWAB
+      ADD   (TEMPWORD1)
+      ST     (CURRADDR)+
+      JUMP  START
+
+HALT1:    CLA
+      LD    (TEMPWORD1)
+      ST     (CURRADDR)+
+      HLT
+
+HALT2:    CLA
+      ADD   (TEMPWORD1)  
+      ;ADD   (TEMPWORD2)
+      ST     (CURRADDR)+
+	HLT
+MAININPUT:  IN     5
+      AND   #0X40
+      BEQ   MAININPUT
+      IN     4
+      ST     (SP+1)
+      RET
+
+CURRADDR:  WORD  0X622
+STOPSYMB:  WORD  0X00
+TEMPWORD1:  WORD  0X621
+TEMPWORD2:  WORD   0X620

@@ -1,0 +1,348 @@
+ORG     0X1
+INTNUM:  WORD  0X109
+FLOATNUM:  WORD   0X10A
+TEMPNUM:  WORD   0X10B
+INPUT: WORD 0x10C
+
+CHECKNUM: WORD 0x10D
+INTNUM1:  WORD  0X10E
+INTNUM2:  WORD  0X10F
+
+MAININPUT:  IN     7
+	AND   #0X40
+	BEQ   MAININPUT
+	IN     6
+	ST     (SP+1)
+	RET
+
+START:    
+	CLA
+	PUSH
+	CALL MAININPUT
+	POP; В AC ТЕКУЩИЙ СИМВОЛ
+	;ST (FUNW)
+	;FUNW: WORD $INPUT
+	ST (INPUT)
+	ASR
+	ASR
+	ASR
+	ASR
+	ST (INTNUM)
+	ASL
+	ASL
+	ASL
+	ASL
+	ST (TEMPNUM)
+	LD (INPUT)
+	SUB (TEMPNUM)
+	ST (FLOATNUM)
+	LD #9
+	ST (CHECKNUM)
+
+	LD (CHECKNUM)
+	CMP (INTNUM)
+	BMI IFNUMNEG
+	;BPL NUMNOTNEG
+	JUMP NUMNOTNEG
+
+	IFNUMNEG: CLA
+		IN 0xD
+		LD #0x31
+	     	OUT 0xC	
+	     	LD #10
+	     	ST (CHECKNUM)
+		LD (INTNUM)
+		SUB (CHECKNUM)
+		ST (INTNUM)
+		ADD #0x30
+		ST (INTNUM2)
+		IN 0xD
+		LD (INTNUM2)
+	     	OUT 0xC
+		CLA
+		ASL
+		ASL
+		ASL
+		ASL
+		ADD (INTNUM)
+		ST (INTNUM)
+		IN 0xD
+		LD #0x2E
+	     	OUT 0xC
+		LD #0x000
+		CMP (INPUT)
+		JUMP FRACTIONAL
+
+	NUMNOTNEG: LD (INTNUM)
+		ADD #0x30
+		ST (INTNUM)
+		IN 0xD
+		LD (INTNUM)
+	     	OUT 0xC	
+		IN 0xD
+		LD #0x2E
+	     	OUT 0xC
+	     	JUMP FRACTIONAL
+	     	
+	FRACTIONAL: CLA
+		ST (SUM)
+		;начинаю работать с дробной частью
+		LD (FLOATNUM)
+		ASR
+		ASR
+		ASR
+		ST (FNUM1)
+		BNE SUM1
+		JUMP FRACTIONAL1
+		SUM1: LD #0X5
+			CLC
+			ROR
+			ROR
+			ROR
+			ROR
+			ROR
+			ST (SAO)
+			ADD (SUM)
+			ST (SUM)
+			JUMP FRACTIONAL1
+			;сверху была работа с старшим битом дробного числа
+			;далее будет обработка каждого бита дроьного числа и сложение их в один адрес SUM
+			FRACTIONAL1: LD (FLOATNUM)
+			ASR
+			ASR
+			ASR
+			ASL
+			ASL
+			ASL
+			ST (TMP)
+			LD (FLOATNUM)
+			ST (F)
+			SUB (TMP)
+			ASR
+			ASR
+			ST (FNUM2)
+			BNE SUM2
+			JUMP FRACTIONAL2
+			SUM2: LD #0X25
+				CLC
+				ROR
+				ROR
+				ROR
+				ROR
+				ROR
+				ROR
+				ROR
+				ROR
+				ROR
+				ST (SAO1)
+				ADD (SUM)
+				ST (SUM)
+				JUMP FRACTIONAL2
+				FRACTIONAL2: LD (F)
+					ASR
+					ASR
+					ASL
+					ASL
+					ST (TMP)
+					LD (F)
+					SUB (TMP)
+					ASR
+					ST (FNUM3)
+					BNE SUM3
+					JUMP FRACTIONAL3
+					SUM3: LD #0X40
+						ASL
+						ASL
+						ST (TMP)
+						LD #0X25
+						ADD (TMP)
+						CLC
+						ROL
+						ROL
+						ROL
+						ROL
+						ST (SAO2)
+						ADD (SUM)
+						ST (SUM)
+						
+						JUMP FRACTIONAL3
+						FRACTIONAL3: LD (F)
+							ASR
+							ASL
+							ST (TMP)
+							LD (F)
+							SUB (TMP)
+							ST (FNUM4)
+							BNE SUM4
+							JUMP OAO
+							SUM4: LD #0X60
+								ASL
+								ASL
+								ASL
+								ASL
+								ST (TMP)
+								LD #0X25
+								ADD (TMP)
+								ST (SAO3)
+								ADD (SUM)
+								ST (SUM)
+								JUMP CHECK
+								CHECK: LD (FNUM2)
+									BNE QWE
+									JUMP OAO
+									QWE: LD #0x40
+										ASL
+										ASL
+										ASL
+										ASL
+										ASL
+										ASL
+										ADD (SUM)
+										ST (SUM)
+										LD #0x50
+										ASL
+										ASL
+										ASL
+										ASL
+										ASL
+										ST (TMP)
+										LD (SUM)
+										SUB (TMP)
+										ST (SUM)
+										JUMP OUTPUT
+OAO: JUMP OUTPUT
+HLT1: HLT					
+
+F: WORD 0x110
+FNUM1: WORD 0x111
+FNUM2: WORD 0x112
+FNUM3: WORD 0x113
+FNUM4: WORD 0x114
+SUM: WORD 0x115
+TMP: WORD 0x116
+SAO: WORD 0x117
+SAO1: WORD 0x118
+SAO2: WORD 0x119
+SAO3: WORD 0x11A
+
+ORG 0x120
+OUTPUT: LD (SUM)
+BMI ASD
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+JUMP #1
+ASD: LD #0x8
+ST (QWE1)
+LD #0x30
+ADD (QWE1)
+ST (QWE1)
+		IN 0xD
+		LD (QWE1)
+	     	OUT 0xC
+
+LD (SUM) 	
+ST (SUMMM)
+
+LD (SUMMM)
+ASL
+ASL
+ASL
+ASL
+BMI ASD1
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+JUMP #1
+ASD1: LD #0x8
+ST (QWE2)
+LD #0x30
+ADD (QWE2)
+ST (QWE2)
+		IN 0xD
+		LD (QWE2)
+	     	OUT 0xC
+
+	     	LD (SUMMM)
+ASL
+ASL
+ASL
+ASL
+ASL
+ASL
+ASL
+ASL
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ASR
+ST (QWE3)
+LD #0x30
+ADD (QWE3)
+ST (QWE3)
+		IN 0xD
+		LD (QWE3)
+	     	OUT 0xC
+
+
+
+
+	     	LD (SUMMM)
+ASL
+ASL
+ASL
+ASL
+ASL
+ASL
+ASL
+ASL	
+ASL
+ASL
+ASL
+ASL
+CLC
+ROL
+ROL
+ROL
+ROL
+ROL
+ST (QWE4)
+LD #0x30
+ADD (QWE4)
+ST (QWE4)
+		IN 0xD
+		LD (QWE4)
+	     	OUT 0xC
+
+SUMMM: WORD 0x1FF
+QWE1: WORD 0x200
+QWE2: WORD 0x201
+QWE3: WORD 0x202
+QWE4: WORD 0x203
+TMP2: WORD 0x204
